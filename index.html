@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Premium de Cronometragem</title>
+    
+    <!-- Fontes Premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        /* =======================================================
+           ESTILOS PREMIUM (MODERN UI)
+        ======================================================= */
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #0f172a;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-hover: #059669;
+            --warning: #f59e0b;
+            --warning-hover: #d97706;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+            --shadow-lg: 0 15px 30px -5px rgba(0,0,0,0.1);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); margin: 0; padding: 30px 15px; color: var(--text-main); }
+        h1, h2, h3 { margin-top: 0; color: var(--secondary); font-weight: 700; letter-spacing: -0.02em; }
+        
+        .container { max-width: 1140px; margin: 0 auto; background: var(--bg-card); padding: 40px; border-radius: 20px; box-shadow: var(--shadow-lg); }
+        
+        /* CABEÇALHO PREMIUM */
+        .header-system { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; border-radius: 16px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; box-shadow: var(--shadow-md); }
+        .header-title h1 { margin: 0; font-size: 28px; color: #ffffff; letter-spacing: -0.03em; }
+        .header-title p { margin: 5px 0 0 0; color: #94a3b8; font-size: 15px; }
+
+        /* Indicador de Evento Ativo */
+        .evento-ativo-badge { background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); color: #ffffff; padding: 10px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+
+        /* NAVEGAÇÃO / ABAS */
+        .tabs { display: flex; gap: 20px; margin-bottom: 35px; border-bottom: 2px solid var(--border); }
+        .tab-btn { background: none; border: none; font-size: 16px; font-weight: 500; color: var(--text-muted); padding: 12px 5px; cursor: pointer; position: relative; transition: color 0.3s; }
+        .tab-btn:hover { color: var(--secondary); }
+        .tab-btn.active { color: var(--primary); font-weight: 600; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: var(--primary); border-radius: 3px 3px 0 0; }
+        
+        .tab-content { display: none; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section { margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid var(--border); }
+        .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .section h2 { font-size: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Formulários e Inputs */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        input, select { padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background-color: #f8fafc; transition: all 0.2s; box-sizing: border-box; width: 100%; font-family: 'Inter', sans-serif; color: var(--text-main); }
+        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); background-color: #ffffff; }
+        
+        /* Botões */
+        button { padding: 12px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Inter', sans-serif; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2); }
+        .btn-primary:hover { box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3); transform: translateY(-1px); }
+        
+        .btn-success { background: linear-gradient(135deg, var(--success) 0%, var(--success-hover) 100%); color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
+        .btn-success:hover { box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); transform: translateY(-1px); }
+        
+        .btn-danger { background: linear-gradient(135deg, var(--danger) 0%, var(--danger-hover) 100%); color: white; }
+        .btn-warning { background: linear-gradient(135deg, var(--warning) 0%, var(--warning-hover) 100%); color: white; }
+        
+        .btn-secondary { background-color: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-secondary:hover { background-color: #e2e8f0; }
+        
+        .btn-sm { padding: 8px 12px; font-size: 13px; border-radius: 8px; }
+        .btn-full { grid-column: span 2; width: 100%; }
+
+        /* Painel de Cronômetros */
+        #cronometros-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; margin-top: 20px; }
+        .cronometro-card { background: #ffffff; border: 1px solid var(--border); padding: 25px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
+        .cronometro-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), #60a5fa); }
+        .cronometro-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+        
+        .cronometro-card h3 { margin: 0 0 5px 0; font-size: 18px; color: var(--secondary); }
+        .atleta-info { font-size: 14px; color: var(--text-muted); margin-bottom: 15px; }
+        
+        /* Visor Numérico Premium */
+        .tempo-display { font-size: 42px; font-weight: 700; font-family: 'JetBrains Mono', monospace; text-align: center; margin: 15px 0 20px; color: var(--secondary); background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--border); letter-spacing: -1px; text-shadow: 1px 1px 0px #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        
+        .controles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        
+        /* Tabelas */
+        .table-controls { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .table-responsive { overflow-x: auto; background: #ffffff; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 15px 20px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; }
+        tr:hover { background-color: #f8fafc; }
+        tr:last-child td { border-bottom: none; }
+        td b { color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; }
+        .pos-col { font-weight: 700; color: var(--danger) !important; font-size: 16px; }
+        
+        .alert { padding: 15px 20px; background-color: #ecfdf5; color: #065f46; border-radius: 10px; margin-bottom: 20px; font-size: 14px; display: none; border-left: 5px solid var(--success); font-weight: 500; }
+
+        /* =======================================================
+           ESTILOS EXCLUSIVOS PARA IMPRESSÃO (GERAÇÃO DO PDF)
+        ======================================================= */
+        @media print {
+            body { background: #fff; padding: 0; margin: 0; color: #000; font-family: 'Inter', Arial, sans-serif; }
+            .container { max-width: 100%; box-shadow: none; padding: 0; border-radius: 0; }
+            .no-print, button, .header-system, .table-controls, .tabs { display: none !important; }
+            .tab-content { display: block !important; } 
+            .section:not(.print-section) { display: none !important; }
+
+            .print-section { display: block !important; border: none; padding: 0; margin: 0; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0f172a; padding-bottom: 20px; }
+            .print-header h1 { margin: 0 0 5px 0; font-size: 26pt; color: #0f172a; text-transform: uppercase; letter-spacing: -1px; }
+            .print-header h2 { margin: 5px 0; font-size: 16pt; color: #333; }
+            .print-header p { margin: 5px 0 0; font-size: 11pt; color: #666; }
+            
+            table { width: 100%; border: 1px solid #cbd5e1; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #cbd5e1; padding: 12px 15px; font-size: 12pt; color: #000; }
+            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
+            td b { color: #000; font-weight: bold; font-family: monospace; }
+            .pos-col { color: #000 !important; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-system no-print">
+        <div class="header-title">
+            <h1>Cronometragem Pro</h1>
+            <p>Gerenciamento de alta performance para eventos esportivos</p>
+        </div>
+        <div class="evento-ativo-badge" id="badge-evento-ativo">
+            🏆 Evento: Nenhum
+        </div>
+    </div>
+
+    <!-- NAVEGAÇÃO DE ABAS -->
+    <div class="tabs no-print">
+        <button class="tab-btn active" onclick="abrirAba(event, 'aba-cadastro')">Configurações & Cadastro</button>
+        <button class="tab-btn" onclick="abrirAba(event, 'aba-pista')">Painel de Pista & Resultados</button>
+    </div>
+
+    <!-- CABEÇALHO EXCLUSIVO DO PDF -->
+    <div class="print-header">
+        <h1 id="print-evento-titulo">Nome do Evento</h1>
+        <h2>Relatório Oficial de Resultados</h2>
+        <h3 id="print-categoria-titulo" style="margin: 5px 0; color: #555;">Categoria: Geral</h3>
+        <p id="print-date"></p>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA 1: CADASTRO E EVENTOS
+    =========================================== -->
+    <div id="aba-cadastro" class="tab-content active">
+        
+        <!-- 1. GESTÃO DE EVENTOS -->
+        <div class="section no-print">
+            <h2>1. Configuração do Evento</h2>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group">
+                    <label>Criar Novo Evento</label>
+                    <input type="text" id="novo-evento" placeholder="Ex: 1ª Etapa Campeonato Estadual">
+                </div>
+                <div class="input-group" style="justify-content: flex-end;">
+                    <button class="btn-primary" onclick="criarEvento()" style="height: 45px;">+ Adicionar Evento</button>
+                </div>
+            </div>
+            
+            <div class="form-grid" style="margin-top: 25px;">
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>Evento Selecionado (Ativo)</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select id="select-evento-geral" onchange="mudarEventoAtivo()" style="flex: 1; min-width: 250px; font-weight: 600;"></select>
+                        <button class="btn-warning" onclick="editarEventoAtivo()">✏️ Renomear</button>
+                        <button class="btn-danger" onclick="excluirEventoAtivo()">🗑️ Apagar Evento</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. GESTÃO DE CATEGORIAS -->
+        <div class="section no-print">
+            <h2>2. Gestão de Categorias</h2>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group">
+                    <input type="text" id="nova-categoria" placeholder="Digite o nome da categoria (Ex: Elite, Master A)">
+                </div>
+                <button class="btn-secondary" onclick="adicionarCategoriaConfig()" style="height: 45px; align-self: flex-end;">+ Adicionar Categoria</button>
+            </div>
+            <div class="table-responsive" style="margin-top: 20px;">
+                <table id="tabela-categorias">
+                    <thead>
+                        <tr>
+                            <th>Nome da Categoria</th>
+                            <th style="text-align: right; width: 200px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Lista de categorias -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. CADASTRO / EDIÇÃO DE ATLETAS -->
+        <div class="section no-print">
+            <h2>3. Ficha de Atletas (Global)</h2>
+            <div id="alert-cadastro" class="alert">✅ Atleta salvo com sucesso!</div>
+            
+            <input type="hidden" id="atleta-id-editando" value="">
+            
+            <div class="form-grid">
+                <div class="input-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" placeholder="Ex: João Silva">
+                </div>
+                <div class="input-group">
+                    <label for="placa">Nº da Placa / Chip</label>
+                    <input type="text" id="placa" placeholder="Ex: 105">
+                </div>
+                <div class="input-group">
+                    <label for="categoria">Categoria Principal</label>
+                    <select id="categoria">
+                        <option value="Geral">Geral</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="telefone">Telefone / WhatsApp</label>
+                    <input type="text" id="telefone" placeholder="(00) 00000-0000">
+                </div>
+                <div class="input-group">
+                    <label for="data_nasc">Data de Nascimento</label>
+                    <input type="date" id="data_nasc">
+                </div>
+            </div>
+            <div class="actions-bar" style="display: flex; gap: 15px; margin-top: 10px;">
+                <button class="btn-primary" id="btn-salvar-atleta" onclick="salvarAtleta()">Salvar Atleta</button>
+                <button class="btn-secondary" id="btn-cancelar-edicao" onclick="cancelarEdicaoAtleta()" style="display: none;">Cancelar Edição</button>
+            </div>
+
+            <!-- TABELA DE ATLETAS CADASTRADOS -->
+            <h3 style="margin-top: 40px; font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">Banco de Atletas Cadastrados</h3>
+            <div class="table-responsive">
+                <table id="tabela-atletas-cadastrados">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">Placa</th>
+                            <th style="width: 40%;">Nome do Atleta</th>
+                            <th style="width: 25%;">Categoria</th>
+                            <th style="text-align: right; width: 25%;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Atletas globais -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA 2: PISTA E RESULTADOS
+    =========================================== -->
+    <div id="aba-pista" class="tab-content">
+        
+        <!-- 4. ADICIONAR CRONÔMETRO -->
+        <div class="section no-print">
+            <h2>Abrir Cronômetro (Pista)</h2>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group">
+                    <label for="select-atleta">Selecione o Atleta (Pronto para largar)</label>
+                    <select id="select-atleta">
+                        <option value="">-- Cadastre um atleta e crie um evento --</option>
+                    </select>
+                </div>
+                <div class="input-group" style="justify-content: flex-end;">
+                    <button class="btn-primary" style="height: 45px;" onclick="adicionarCronometro()">⏱️ Iniciar Pista</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. PAINEL DE CRONÔMETROS -->
+        <div class="section no-print" style="background: transparent; border: none; padding: 0;">
+            <div id="cronometros-container">
+                <!-- Cronômetros ativos aparecem aqui no TOPO -->
+            </div>
+        </div>
+
+        <!-- 6. RANKING E EXPORTAÇÃO -->
+        <div class="section print-section" style="margin-top: 40px;">
+            <h2 class="no-print">Classificação Oficial</h2>
+            
+            <div class="table-controls no-print">
+                <div class="input-group" style="flex: 1; min-width: 200px;">
+                    <label>Filtrar Ranking por Categoria:</label>
+                    <select id="filtro-categoria-tabela" onchange="atualizarTabelaResultados()">
+                        <option value="TODAS">-- Todas as Categorias --</option>
+                    </select>
+                </div>
+                <button class="btn-success" onclick="gerarPDF()" style="height: 45px;">📄 Gerar PDF do Ranking</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="tabela-resultados">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">Pos</th>
+                            <th style="width: 10%;">Placa</th>
+                            <th style="width: 35%;">Nome do Atleta</th>
+                            <th style="width: 15%;">Categoria</th>
+                            <th style="width: 20%;">Tempo Final</th>
+                            <th style="width: 15%; text-align: center;" class="no-print">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Resultados do evento atual aparecem aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- FUNÇÃO PARA ALTERNAR AS ABAS ---
+    function abrirAba(evento, nomeAba) {
+        const conteudos = document.querySelectorAll('.tab-content');
+        conteudos.forEach(conteudo => conteudo.classList.remove('active'));
+
+        const botoes = document.querySelectorAll('.tab-btn');
+        botoes.forEach(botao => botao.classList.remove('active'));
+
+        document.getElementById(nomeAba).classList.add('active');
+        evento.currentTarget.classList.add('active');
+    }
+
+    // --- VARIÁVEIS DE ESTADO ---
+    let eventos = ["1º Evento Padrão"];
+    let eventoAtivo = "1º Evento Padrão";
+    
+    let categoriasGlobais = ["Geral"];
+    let atletas = [];
+    let resultados = []; 
+    let cronometrosIdCounter = 0;
+    let atletasComCronometroAtivo = new Set(); 
+
+    // Inicialização da tela
+    window.onload = function() {
+        atualizarSelectEventos();
+        atualizarListasDeCategorias();
+    };
+
+    function formatarTempo(ms) {
+        let horas = Math.floor(ms / 3600000);
+        let minutos = Math.floor((ms % 3600000) / 60000);
+        let segundos = Math.floor((ms % 60000) / 1000);
+        let milissegundos = Math.floor((ms % 1000) / 10); 
+        return (horas < 10 ? "0" + horas : horas) + ":" +
+               (minutos < 10 ? "0" + minutos : minutos) + ":" +
+               (segundos < 10 ? "0" + segundos : segundos) + "." +
+               (milissegundos < 10 ? "0" + milissegundos : milissegundos);
+    }
+
+    // ==========================================
+    // 1. GESTÃO DE EVENTOS
+    // ==========================================
+    function criarEvento() {
+        const novoEvento = document.getElementById('novo-evento').value.trim();
+        if(!novoEvento) return alert("Digite um nome para o evento.");
+        if(eventos.includes(novoEvento)) return alert("Este evento já existe!");
+
+        eventos.push(novoEvento);
+        document.getElementById('novo-evento').value = '';
+        
+        eventoAtivo = novoEvento;
+        atualizarSelectEventos();
+        mudarEventoAtivo(novoEvento);
+    }
+
+    function atualizarSelectEventos() {
+        const select = document.getElementById('select-evento-geral');
+        select.innerHTML = '';
+        eventos.forEach(ev => {
+            const opt = document.createElement('option');
+            opt.value = ev;
+            opt.text = ev;
+            if(ev === eventoAtivo) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    function mudarEventoAtivo(evNomeForcado = null) {
+        const select = document.getElementById('select-evento-geral');
+        eventoAtivo = evNomeForcado || select.value;
+        
+        document.getElementById('badge-evento-ativo').innerText = `🏆 Evento: ${eventoAtivo}`;
+        
+        // Zera os cronômetros ativos da tela, pois mudou de evento
+        document.getElementById('cronometros-container').innerHTML = '';
+        atletasComCronometroAtivo.clear();
+
+        // Atualiza a interface
+        atualizarSelectAtletasParaPista();
+        atualizarTabelaResultados();
+    }
+
+    function editarEventoAtivo() {
+        if(!eventoAtivo) return alert("Nenhum evento selecionado.");
+        const novoNome = prompt("Digite o novo nome para este evento:", eventoAtivo);
+        
+        if(novoNome && novoNome.trim() !== "" && novoNome.trim() !== eventoAtivo) {
+            const nomeFinal = novoNome.trim();
+            if(eventos.includes(nomeFinal)) return alert("Já existe um evento com este nome.");
+            
+            const nomeAntigo = eventoAtivo;
+            eventoAtivo = nomeFinal;
+            
+            // Atualiza array de eventos
+            const idx = eventos.indexOf(nomeAntigo);
+            if(idx !== -1) eventos[idx] = nomeFinal;
+            
+            // Atualiza os resultados vinculados ao evento antigo
+            resultados.forEach(r => { if(r.evento === nomeAntigo) r.evento = nomeFinal; });
+            
+            atualizarSelectEventos();
+            mudarEventoAtivo(nomeFinal);
+        }
+    }
+
+    function excluirEventoAtivo() {
+        if(!eventoAtivo) return alert("Nenhum evento selecionado.");
+        if(eventos.length === 1) return alert("Você precisa ter pelo menos um evento cadastrado. Crie outro evento antes de apagar este.");
+        
+        const confirmacao = confirm(`🚨 ATENÇÃO! 🚨\n\nVocê tem certeza que deseja APAGAR o evento '${eventoAtivo}'?\n\nTODOS os tempos e resultados registrados nele serão perdidos permanentemente!`);
+        
+        if(confirmacao) {
+            // Remove os resultados deste evento
+            resultados = resultados.filter(r => r.evento !== eventoAtivo);
+            
+            // Remove o evento da lista
+            eventos = eventos.filter(e => e !== eventoAtivo);
+            
+            // Puxa o primeiro evento da lista para ser o ativo
+            eventoAtivo = eventos[0];
+            
+            atualizarSelectEventos();
+            mudarEventoAtivo(eventoAtivo);
+        }
+    }
+
+    // ==========================================
+    // 2. GESTÃO DE CATEGORIAS
+    // ==========================================
+    function adicionarCategoriaConfig() {
+        const input = document.getElementById('nova-categoria');
+        const novaCat = input.value.trim();
+        if (!novaCat) return alert("Digite um nome para a categoria.");
+        if (categoriasGlobais.some(c => c.toUpperCase() === novaCat.toUpperCase())) return alert("Categoria já existe!");
+
+        categoriasGlobais.push(novaCat);
+        input.value = '';
+        atualizarListasDeCategorias();
+    }
+
+    function excluirCategoria(nome) {
+        if(nome === "Geral") return alert("A categoria 'Geral' padrão não pode ser excluída.");
+        if(confirm(`Tem certeza que deseja excluir a categoria '${nome}'?\nAtletas vinculados a ela serão movidos para 'Geral'.`)) {
+            categoriasGlobais = categoriasGlobais.filter(c => c !== nome);
+            atletas.forEach(a => { if(a.categoria === nome) a.categoria = "Geral"; });
+            atualizarListasDeCategorias();
+            renderTabelaAtletasCadastrados();
+        }
+    }
+
+    function editarNomeCategoria(nomeAntigo) {
+        if(nomeAntigo === "Geral") return alert("A categoria 'Geral' não pode ser editada.");
+        let novoNome = prompt("Digite o novo nome para a categoria:", nomeAntigo);
+        if(novoNome && novoNome.trim() !== "") {
+            novoNome = novoNome.trim();
+            if (categoriasGlobais.some(c => c.toUpperCase() === novoNome.toUpperCase() && c !== nomeAntigo)) {
+                return alert("Já existe uma categoria com este nome.");
+            }
+            
+            const idx = categoriasGlobais.indexOf(nomeAntigo);
+            if(idx !== -1) categoriasGlobais[idx] = novoNome;
+            
+            atletas.forEach(a => { if(a.categoria === nomeAntigo) a.categoria = novoNome; });
+            resultados.forEach(r => { if(r.categoria === nomeAntigo) r.categoria = novoNome; });
+            
+            atualizarListasDeCategorias();
+            renderTabelaAtletasCadastrados();
+            atualizarTabelaResultados();
+        }
+    }
+
+    function atualizarListasDeCategorias() {
+        const tbody = document.querySelector('#tabela-categorias tbody');
+        tbody.innerHTML = '';
+        
+        const selectCadastro = document.getElementById('categoria');
+        const selectAtualCadastro = selectCadastro.value;
+        selectCadastro.innerHTML = '';
+
+        const selectFiltro = document.getElementById('filtro-categoria-tabela');
+        const selectAtualFiltro = selectFiltro.value;
+        selectFiltro.innerHTML = '<option value="TODAS">-- Todas as Categorias --</option>';
+
+        categoriasGlobais.sort().forEach(cat => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 500;">${cat}</td>
+                <td style="text-align: right;">
+                    ${cat !== 'Geral' ? `
+                    <button class="btn-secondary btn-sm" onclick="editarNomeCategoria('${cat}')">✏️ Editar</button>
+                    <button class="btn-danger btn-sm" onclick="excluirCategoria('${cat}')">🗑️</button>
+                    ` : '<span style="color:var(--text-muted); font-size:13px; font-weight:600;">Sistema (Padrão)</span>'}
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            const optCad = document.createElement('option');
+            optCad.value = cat;
+            optCad.text = cat;
+            if(cat === selectAtualCadastro) optCad.selected = true;
+            selectCadastro.appendChild(optCad);
+
+            const optFiltro = document.createElement('option');
+            optFiltro.value = cat;
+            optFiltro.text = cat;
+            if(cat === selectAtualFiltro) optFiltro.selected = true;
+            selectFiltro.appendChild(optFiltro);
+        });
+    }
+
+    // ==========================================
+    // 3. GESTÃO DE ATLETAS (GLOBAL)
+    // ==========================================
+    function salvarAtleta() {
+        const idEditando = document.getElementById('atleta-id-editando').value;
+        const nome = document.getElementById('nome').value.trim();
+        const placa = document.getElementById('placa').value.trim();
+        const categoria = document.getElementById('categoria').value;
+        const telefone = document.getElementById('telefone').value.trim();
+        const data_nasc = document.getElementById('data_nasc').value;
+
+        if (!nome || !placa) return alert("Nome e Placa são campos obrigatórios!");
+
+        if (idEditando) {
+            let atleta = atletas.find(a => a.id === idEditando);
+            if(atleta) {
+                atleta.nome = nome;
+                atleta.placa = placa;
+                atleta.categoria = categoria;
+                atleta.telefone = telefone;
+                atleta.data_nasc = data_nasc;
+            }
+            cancelarEdicaoAtleta(); 
+        } else {
+            const atleta = { id: Date.now().toString(), nome, placa, categoria, telefone, data_nasc };
+            atletas.push(atleta);
+            
+            document.getElementById('nome').value = '';
+            document.getElementById('placa').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('data_nasc').value = '';
+        }
+
+        renderTabelaAtletasCadastrados();
+        atualizarSelectAtletasParaPista();
+
+        const alertBox = document.getElementById('alert-cadastro');
+        alertBox.style.display = 'block';
+        setTimeout(() => alertBox.style.display = 'none', 3000);
+    }
+
+    function renderTabelaAtletasCadastrados() {
+        const tbody = document.querySelector('#tabela-atletas-cadastrados tbody');
+        tbody.innerHTML = '';
+        atletas.forEach(atleta => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><b>${atleta.placa}</b></td>
+                <td style="font-weight: 500;">${atleta.nome}</td>
+                <td><span style="background: var(--bg-body); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${atleta.categoria}</span></td>
+                <td style="text-align: right;">
+                    <button class="btn-secondary btn-sm" onclick="prepararEdicaoAtleta('${atleta.id}')">✏️ Editar Perfil</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function prepararEdicaoAtleta(id) {
+        const atleta = atletas.find(a => a.id === id);
+        if(!atleta) return;
+        
+        document.getElementById('atleta-id-editando').value = atleta.id;
+        document.getElementById('nome').value = atleta.nome;
+        document.getElementById('placa').value = atleta.placa;
+        document.getElementById('categoria').value = atleta.categoria;
+        document.getElementById('telefone').value = atleta.telefone;
+        document.getElementById('data_nasc').value = atleta.data_nasc;
+
+        document.getElementById('btn-salvar-atleta').innerText = "💾 Salvar Alterações";
+        document.getElementById('btn-cancelar-edicao').style.display = "inline-flex";
+        
+        document.getElementById('aba-cadastro').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelarEdicaoAtleta() {
+        document.getElementById('atleta-id-editando').value = '';
+        document.getElementById('nome').value = '';
+        document.getElementById('placa').value = '';
+        document.getElementById('telefone').value = '';
+        document.getElementById('data_nasc').value = '';
+        
+        document.getElementById('btn-salvar-atleta').innerText = "Salvar Atleta";
+        document.getElementById('btn-cancelar-edicao').style.display = "none";
+    }
+
+    // ==========================================
+    // 4. PISTA E RESULTADOS (POR EVENTO)
+    // ==========================================
+    function atualizarSelectAtletasParaPista() {
+        const select = document.getElementById('select-atleta');
+        select.innerHTML = '<option value="">-- Escolha um atleta livre --</option>';
+        
+        let temAtleta = false;
+
+        atletas.forEach(atleta => {
+            const jaCorreuNesteEvento = resultados.some(r => r.idAtleta === atleta.id && r.evento === eventoAtivo);
+            const estaCorrendoAgora = atletasComCronometroAtivo.has(atleta.id);
+
+            if (!jaCorreuNesteEvento && !estaCorrendoAgora) {
+                const option = document.createElement('option');
+                option.value = atleta.id;
+                option.text = `[${atleta.placa}] ${atleta.nome} - ${atleta.categoria}`;
+                select.appendChild(option);
+                temAtleta = true;
+            }
+        });
+
+        if (!temAtleta && atletas.length === 0) {
+            select.innerHTML = '<option value="">-- Nenhum atleta cadastrado --</option>';
+        }
+    }
+
+    function adicionarCronometro() {
+        if(!eventoAtivo) return alert("Crie e selecione um evento primeiro!");
+        
+        const select = document.getElementById('select-atleta');
+        const atletaId = select.value;
+
+        if (!atletaId) return alert("Selecione um atleta válido para iniciar.");
+
+        const atleta = atletas.find(a => a.id === atletaId);
+        cronometrosIdCounter++;
+        const timerId = cronometrosIdCounter;
+
+        atletasComCronometroAtivo.add(atletaId);
+        atualizarSelectAtletasParaPista();
+
+        const timerData = { id: timerId, atleta: atleta, startTime: 0, elapsedTime: 0, interval: null, correndo: false };
+
+        const container = document.getElementById('cronometros-container');
+        const card = document.createElement('div');
+        card.className = 'cronometro-card';
+        card.id = `timer-card-${timerId}`;
+        
+        card.innerHTML = `
+            <div>
+                <h3>${atleta.nome}</h3>
+                <div class="atleta-info">Placa: <b>${atleta.placa}</b> &bull; Categoria: <strong>${atleta.categoria}</strong></div>
+            </div>
+            <div class="tempo-display" id="display-${timerId}">00:00:00.00</div>
+            <div>
+                <div class="controles-grid">
+                    <button class="btn-success" id="btn-start-${timerId}">▶ Iniciar</button>
+                    <button class="btn-warning" id="btn-stop-${timerId}">⏸ Pausar</button>
+                    <button class="btn-secondary" id="btn-reset-${timerId}">🔄 Zerar</button>
+                    <button class="btn-danger" id="btn-cancel-${timerId}">✖ Cancelar</button>
+                </div>
+                <button class="btn-primary btn-full" id="btn-save-${timerId}" style="margin-top: 10px; font-size:15px;">
+                    🏁 Finalizar e Salvar Tempo
+                </button>
+            </div>
+        `;
+        
+        container.insertBefore(card, container.firstChild);
+        const display = document.getElementById(`display-${timerId}`);
+
+        function updateDisplay() {
+            const now = Date.now();
+            const timeDiff = timerData.elapsedTime + (now - timerData.startTime);
+            display.innerText = formatarTempo(timeDiff);
+        }
+
+        document.getElementById(`btn-start-${timerId}`).onclick = function() {
+            if (!timerData.correndo) {
+                timerData.startTime = Date.now();
+                timerData.interval = setInterval(updateDisplay, 10);
+                timerData.correndo = true;
+            }
+        };
+
+        document.getElementById(`btn-stop-${timerId}`).onclick = function() {
+            if (timerData.correndo) {
+                clearInterval(timerData.interval);
+                timerData.elapsedTime += Date.now() - timerData.startTime;
+                timerData.correndo = false;
+            }
+        };
+
+        document.getElementById(`btn-reset-${timerId}`).onclick = function() {
+            clearInterval(timerData.interval);
+            timerData.correndo = false;
+            timerData.elapsedTime = 0;
+            display.innerText = "00:00:00.00";
+        };
+
+        document.getElementById(`btn-cancel-${timerId}`).onclick = function() {
+            clearInterval(timerData.interval);
+            atletasComCronometroAtivo.delete(atleta.id);
+            atualizarSelectAtletasParaPista();
+            card.remove();
+        };
+
+        document.getElementById(`btn-save-${timerId}`).onclick = function() {
+            clearInterval(timerData.interval);
+            let tempoFinal = timerData.elapsedTime;
+            if (timerData.correndo) tempoFinal += Date.now() - timerData.startTime;
+
+            if (tempoFinal === 0) return alert("O cronômetro está zerado! Registre um tempo válido.");
+
+            resultados.push({
+                evento: eventoAtivo,
+                idAtleta: atleta.id,
+                placa: atleta.placa,
+                nome: atleta.nome,
+                categoria: atleta.categoria,
+                tempo: formatarTempo(tempoFinal),
+                tempoMs: tempoFinal
+            });
+
+            atletasComCronometroAtivo.delete(atleta.id);
+            atualizarSelectAtletasParaPista();
+            atualizarTabelaResultados();
+            card.remove(); 
+        };
+    }
+
+    function refazerVolta(idAtleta, nomeEvento) {
+        if (!confirm("Tem certeza que deseja apagar o tempo deste atleta para que ele corra de novo NESTE evento?")) return;
+        resultados = resultados.filter(res => !(res.idAtleta === idAtleta && res.evento === nomeEvento));
+        atualizarSelectAtletasParaPista();
+        atualizarTabelaResultados();
+    }
+
+    function atualizarTabelaResultados() {
+        const tbody = document.querySelector('#tabela-resultados tbody');
+        tbody.innerHTML = '';
+        
+        const filtro = document.getElementById('filtro-categoria-tabela').value;
+
+        // Filtra APENAS os resultados do Evento Ativo
+        let resultadosEventoAtual = resultados.filter(r => r.evento === eventoAtivo);
+        
+        // Ordena por menor tempo
+        resultadosEventoAtual.sort((a, b) => a.tempoMs - b.tempoMs);
+        
+        let posicaoContador = 1;
+
+        resultadosEventoAtual.forEach(res => {
+            if (filtro === 'TODAS' || res.categoria === filtro) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="pos-col">${posicaoContador}º</td>
+                    <td><b>${res.placa}</b></td>
+                    <td style="font-weight: 500;">${res.nome}</td>
+                    <td><span style="background: var(--bg-body); padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">${res.categoria}</span></td>
+                    <td><b>${res.tempo}</b></td>
+                    <td class="no-print" style="text-align: center;">
+                        <button class="btn-warning btn-sm" onclick="refazerVolta('${res.idAtleta}', '${res.evento}')">🔄 Refazer</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                posicaoContador++;
+            }
+        });
+    }
+
+    function gerarPDF() {
+        const resultadosEventoAtual = resultados.filter(r => r.evento === eventoAtivo);
+        if (resultadosEventoAtual.length === 0) return alert("Nenhum tempo foi salvo neste evento para gerar PDF.");
+        
+        document.getElementById('print-evento-titulo').innerText = eventoAtivo;
+
+        const filtro = document.getElementById('filtro-categoria-tabela').value;
+        const stringTituloCat = filtro === 'TODAS' ? "Todas as Categorias (Geral)" : filtro;
+        document.getElementById('print-categoria-titulo').innerText = "Categoria: " + stringTituloCat;
+
+        const agora = new Date();
+        document.getElementById('print-date').innerText = "Emitido em: " + agora.toLocaleDateString('pt-BR') + " às " + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        
+        window.print();
+    }
+</script>
+
+</body>
+</html>
