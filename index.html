@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CronoPro - Sistema de Cronometragem</title>
+    <title>CronoBike - Sistema de Cronometragem</title>
     
     <!-- Fontes Premium -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -143,7 +143,7 @@
 <div class="container">
     <div class="header-system no-print">
         <div class="header-title">
-            <h1>CronoPro</h1>
+            <h1>CronoBike</h1>
             <p>Gerenciamento de eventos esportivos</p>
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px; align-items: stretch;">
@@ -350,11 +350,11 @@
     // ==========================================
     function salvarDados() {
         const dados = { eventos, eventoAtivo, categoriasGlobais, atletas, resultados };
-        localStorage.setItem('cronoProDados', JSON.stringify(dados));
+        localStorage.setItem('cronoBikeDados', JSON.stringify(dados));
     }
 
     function carregarDados() {
-        const dadosSalvos = localStorage.getItem('cronoProDados');
+        const dadosSalvos = localStorage.getItem('cronoBikeDados');
         if (dadosSalvos) {
             const dados = JSON.parse(dadosSalvos);
             eventos = dados.eventos || ["1º Evento Padrão"];
