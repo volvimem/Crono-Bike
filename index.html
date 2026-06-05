@@ -1,5 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CronoPro - Sistema de Cronometragem</title>
+    
+    <!-- Fontes Premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        /* =======================================================
+           ESTILOS PREMIUM E MOBILE-FIRST
+        ======================================================= */
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #0f172a;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); margin: 0; padding: 20px; color: var(--text-main); }
+        h1, h2, h3 { margin-top: 0; color: var(--secondary); font-weight: 700; letter-spacing: -0.02em; }
+        
+        .container { max-width: 1140px; margin: 0 auto; background: var(--bg-card); padding: 30px; border-radius: 16px; box-shadow: var(--shadow-md); }
+        
+        /* CABEÇALHO E INSTALAÇÃO PWA */
+        .header-system { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 20px; border-radius: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .header-title h1 { margin: 0; font-size: 24px; color: #ffffff; }
+        .header-title p { margin: 5px 0 0 0; color: #94a3b8; font-size: 14px; }
+        .evento-ativo-badge { background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #ffffff; padding: 8px 15px; border-radius: 10px; font-weight: 600; font-size: 14px; text-align: center; }
+        
+        /* Botão de instalar PWA */
+        #btn-install-pwa { display: none; background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); width: 100%; }
+
+        /* NAVEGAÇÃO / ABAS */
+        .tabs { display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 2px solid var(--border); }
+        .tab-btn { background: none; border: none; font-size: 15px; font-weight: 500; color: var(--text-muted); padding: 12px 5px; cursor: pointer; position: relative; }
+        .tab-btn.active { color: var(--primary); font-weight: 600; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: var(--primary); border-radius: 3px 3px 0 0; }
+        
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .section h2 { font-size: 18px; margin-bottom: 15px; }
+        
+        /* Formulários */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; }
+        input, select { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background-color: #f8fafc; color: var(--text-main); font-family: 'Inter', sans-serif;}
+        input:focus, select:focus { border-color: var(--primary); outline: none; background-color: #ffffff; }
+        
+        /* Botões */
+        button { padding: 12px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-secondary { background: #e2e8f0; color: var(--text-main); }
+        .btn-sm { padding: 8px 12px; font-size: 12px; min-height: auto; }
+        .btn-full { grid-column: span 2; width: 100%; }
+
+        /* Cronômetros */
+        #cronometros-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 15px; }
+        .cronometro-card { background: #ffffff; border: 1px solid var(--border); padding: 20px; border-radius: 12px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; border-top: 4px solid var(--primary); }
+        .cronometro-card h3 { font-size: 16px; margin-bottom: 5px; }
+        .atleta-info { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+        .tempo-display { font-size: 38px; font-weight: 700; font-family: 'JetBrains Mono', monospace; text-align: center; margin: 10px 0; color: var(--secondary); background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .controles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+
+        /* Tabelas */
+        .table-controls { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 8px; }
+        .table-responsive { overflow-x: auto; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { background-color: #f8fafc; color: var(--text-muted); text-transform: uppercase; font-size: 11px; text-align: left;}
+        td b { color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+        .pos-col { font-weight: 700; color: var(--danger) !important; font-size: 15px; }
+        
+        /* OTIMIZAÇÃO SMARTPHONES */
+        @media (max-width: 768px) {
+            body { padding: 10px 5px; }
+            .container { padding: 15px; border-radius: 12px; box-shadow: none; }
+            
+            .header-system { padding: 15px; flex-direction: column; align-items: stretch; text-align: center; }
+            .evento-ativo-badge { text-align: center; justify-content: center; width: 100%; box-sizing: border-box;}
+            
+            .tabs { flex-direction: column; gap: 8px; border-bottom: none; }
+            .tab-btn { background: #f1f5f9; border-radius: 8px; padding: 12px; text-align: left; border-left: 4px solid transparent; }
+            .tab-btn.active { background: #e0e7ff; border-left: 4px solid var(--primary); }
+            .tab-btn.active::after { display: none; }
+
+            .form-grid { grid-template-columns: 1fr; gap: 12px; }
+            .input-group button, .table-controls button { width: 100%; }
+            
+            .cronometro-card { padding: 15px; }
+            .tempo-display { font-size: 32px; padding: 8px; }
+            .controles-grid { grid-template-columns: 1fr; }
+            .controles-grid button { width: 100%; }
+            
+            .table-controls { flex-direction: column; align-items: stretch; }
+            .table-controls .input-group { width: 100%; }
+        }
+
+        /* Impressão */
+        @media print {
+            body { padding: 0; background: #fff; }
+            .container { padding: 0; box-shadow: none;}
+            .no-print, button, .header-system, .table-controls, .tabs { display: none !important; }
+            .tab-content { display: block !important; } 
+            .section:not(.print-section) { display: none !important; }
+            .print-section { display: block !important; border: none; padding: 0; }
+            table { width: 100%; min-width: auto; border: 1px solid #000; border-collapse: collapse; }
+            th, td { border: 1px solid #000; padding: 8px; color: #000; }
+            th { background-color: #eee !important; -webkit-print-color-adjust: exact; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
+        }
+        .print-header { display: none; }
+        .alert { display: none; padding: 12px; background: #ecfdf5; color: #065f46; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: bold; border-left: 4px solid var(--success); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-system no-print">
+        <div class="header-title">
+            <h1>CronoPro</h1>
+            <p>Gerenciamento de eventos esportivos</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: stretch;">
+            <button id="btn-install-pwa">📲 Instalar Aplicativo</button>
+            <div class="evento-ativo-badge" id="badge-evento-ativo">🏆 Evento: Nenhum</div>
+        </div>
+    </div>
+
+    <div class="tabs no-print">
+        <button class="tab-btn active" onclick="abrirAba(event, 'aba-cadastro')">📋 Configurações & Cadastro</button>
+        <button class="tab-btn" onclick="abrirAba(event, 'aba-pista')">⏱️ Painel de Pista & Resultados</button>
+    </div>
+
+    <div class="print-header">
+        <h1 id="print-evento-titulo">Nome do Evento</h1>
+        <h2>Relatório Oficial de Resultados</h2>
+        <h3 id="print-categoria-titulo">Categoria: Geral</h3>
+        <p id="print-date"></p>
+    </div>
+
+    <!-- ABA 1: CADASTRO E EVENTOS -->
+    <div id="aba-cadastro" class="tab-content active">
+        
+        <div class="section no-print">
+            <h2>1. Configuração do Evento</h2>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group">
+                    <label>Criar Novo Evento</label>
+                    <input type="text" id="novo-evento" placeholder="Ex: 1ª Etapa Campeonato">
+                </div>
+                <div class="input-group">
+                    <button class="btn-primary" onclick="criarEvento()">+ Adicionar</button>
+                </div>
+            </div>
+            
+            <div class="form-grid">
+                <div class="input-group" style="width: 100%;">
+                    <label>Evento Selecionado (Ativo)</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select id="select-evento-geral" onchange="mudarEventoAtivo()" style="flex: 1; min-width: 200px;"></select>
+                        <button class="btn-warning" onclick="editarEventoAtivo()">✏️ Editar</button>
+                        <button class="btn-danger" onclick="excluirEventoAtivo()">🗑️ Apagar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section no-print">
+            <h2>2. Gestão de Categorias</h2>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group">
+                    <input type="text" id="nova-categoria" placeholder="Ex: Elite, Master">
+                </div>
+                <button class="btn-secondary" onclick="adicionarCategoriaConfig()">+ Categoria</button>
+            </div>
+            <div class="table-responsive" style="margin-top: 15px;">
+                <table id="tabela-categorias">
+                    <thead><tr><th>Nome da Categoria</th><th style="text-align: right;">Ações</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section no-print">
+            <h2>3. Ficha de Atletas (Global)</h2>
+            <div id="alert-cadastro" class="alert">Atleta salvo com sucesso!</div>
+            <input type="hidden" id="atleta-id-editando" value="">
+            
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="nome" placeholder="Ex: João Silva">
+                </div>
+                <div class="input-group">
+                    <label>Nº Placa/Chip</label>
+                    <input type="text" id="placa" placeholder="Ex: 105">
+                </div>
+                <div class="input-group">
+                    <label>Categoria</label>
+                    <select id="categoria"><option value="Geral">Geral</option></select>
+                </div>
+                <div class="input-group">
+                    <label>Telefone</label>
+                    <input type="tel" id="telefone" placeholder="(00) 00000-0000">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                <button class="btn-primary" id="btn-salvar-atleta" onclick="salvarAtleta()" style="flex: 1;">Salvar Atleta</button>
+                <button class="btn-secondary" id="btn-cancelar-edicao" onclick="cancelarEdicaoAtleta()" style="display: none; flex: 1;">Cancelar</button>
+            </div>
+
+            <h3 style="margin-top: 30px; font-size: 15px;">Banco de Atletas Cadastrados</h3>
+            <div class="table-responsive">
+                <table id="tabela-atletas-cadastrados">
+                    <thead><tr><th>Placa</th><th>Nome</th><th>Categoria</th><th>Ação</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABA 2: PISTA E RESULTADOS -->
+    <div id="aba-pista" class="tab-content">
+        
+        <div class="section no-print">
+            <h2>Abrir Cronômetro (Pista)</h2>
+            <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="input-group">
+                    <label>Selecione o Atleta (Pronto para largar)</label>
+                    <select id="select-atleta">
+                        <option value="">-- Nenhum atleta livre --</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <button class="btn-primary" onclick="adicionarCronometro()">⏱️ Iniciar Pista</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section no-print" style="border: none; padding: 0;">
+            <div id="cronometros-container"></div>
+        </div>
+
+        <div class="section print-section" style="margin-top: 30px;">
+            <h2 class="no-print">Classificação Oficial</h2>
+            
+            <div class="table-controls no-print">
+                <div class="input-group" style="flex: 1; min-width: 200px;">
+                    <label>Filtrar Ranking por Categoria:</label>
+                    <select id="filtro-categoria-tabela" onchange="atualizarTabelaResultados()">
+                        <option value="TODAS">-- Todas as Categorias --</option>
+                    </select>
+                </div>
+                <button class="btn-success" onclick="gerarPDF()">📄 Gerar PDF</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="tabela-resultados">
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Placa</th>
+                            <th>Nome do Atleta</th>
+                            <th>Categoria</th>
+                            <th>Tempo Final</th>
+                            <th class="no-print">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // --- LÓGICA DE INSTALAÇÃO DO PWA ---
+    // ==========================================
+    // 1. PWA E INSTALAÇÃO
+    // ==========================================
     let deferredPrompt;
     const btnInstall = document.getElementById('btn-install-pwa');
 
@@ -31,7 +334,9 @@
         deferredPrompt = null;
     });
 
-    // --- VARIÁVEIS DE ESTADO ---
+    // ==========================================
+    // 2. VARIÁVEIS DE ESTADO DO SISTEMA
+    // ==========================================
     let eventos = ["1º Evento Padrão"];
     let eventoAtivo = "1º Evento Padrão";
     let categoriasGlobais = ["Geral"];
@@ -40,7 +345,9 @@
     let cronometrosIdCounter = 0;
     let atletasComCronometroAtivo = new Set(); 
 
-    // --- PERSISTÊNCIA DE DADOS (LOCALSTORAGE) ---
+    // ==========================================
+    // 3. SISTEMA DE SALVAMENTO (LOCALSTORAGE)
+    // ==========================================
     function salvarDados() {
         const dados = { eventos, eventoAtivo, categoriasGlobais, atletas, resultados };
         localStorage.setItem('cronoProDados', JSON.stringify(dados));
@@ -58,7 +365,29 @@
         }
     }
 
-    // --- FUNÇÃO PARA ALTERNAR AS ABAS COM MEMÓRIA ---
+    // ==========================================
+    // 4. INICIALIZAÇÃO DA TELA
+    // ==========================================
+    window.onload = function() {
+        carregarDados();
+        atualizarSelectEventos();
+        atualizarListasDeCategorias();
+        renderTabelaAtletasCadastrados();
+        mudarEventoAtivo(eventoAtivo);
+        
+        // Restaura a última aba aberta
+        const abaSalva = localStorage.getItem('abaAtiva') || 'aba-cadastro';
+        abrirAba(null, abaSalva);
+    };
+
+    // Prevenção de atualização acidental
+    window.onbeforeunload = function(e) {
+        if (atletasComCronometroAtivo.size > 0) {
+            e.preventDefault();
+            return "Existem cronômetros rodando! Atualizar a página apagará o tempo ativo.";
+        }
+    };
+
     function abrirAba(evento, nomeAba) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -70,29 +399,8 @@
             document.querySelector(`button[onclick*="${nomeAba}"]`).classList.add('active');
         }
         
-        localStorage.setItem('abaAtiva', nomeAba); // Salva a aba atual
+        localStorage.setItem('abaAtiva', nomeAba); 
     }
-
-    // Inicialização
-    window.onload = function() {
-        carregarDados();
-        atualizarSelectEventos();
-        atualizarListasDeCategorias();
-        renderTabelaAtletasCadastrados();
-        mudarEventoAtivo(eventoAtivo); // Restaura a tela do evento salvo
-        
-        // Restaura a última aba aberta
-        const abaSalva = localStorage.getItem('abaAtiva') || 'aba-cadastro';
-        abrirAba(null, abaSalva);
-    };
-
-    // Prevenção de atualização acidental durante a cronometragem
-    window.onbeforeunload = function(e) {
-        if (atletasComCronometroAtivo.size > 0) {
-            e.preventDefault();
-            return "Existem cronômetros rodando! Atualizar a página apagará o tempo ativo.";
-        }
-    };
 
     function formatarTempo(ms) {
         let horas = Math.floor(ms / 3600000);
@@ -102,7 +410,9 @@
         return (horas < 10 ? "0" + horas : horas) + ":" + (minutos < 10 ? "0" + minutos : minutos) + ":" + (segundos < 10 ? "0" + segundos : segundos) + "." + (milissegundos < 10 ? "0" + milissegundos : milissegundos);
     }
 
-    // --- EVENTOS ---
+    // ==========================================
+    // 5. GESTÃO DE EVENTOS
+    // ==========================================
     function criarEvento() {
         const novoEvento = document.getElementById('novo-evento').value.trim();
         if(!novoEvento) return alert("Digite um nome.");
@@ -131,7 +441,6 @@
         eventoAtivo = evNomeForcado || document.getElementById('select-evento-geral').value;
         document.getElementById('badge-evento-ativo').innerText = `🏆 Evento: ${eventoAtivo}`;
         
-        // Evita apagar cronômetros se a função for chamada no onload inicial
         if(!evNomeForcado && atletasComCronometroAtivo.size === 0) {
             document.getElementById('cronometros-container').innerHTML = '';
         }
@@ -170,7 +479,9 @@
         }
     }
 
-    // --- CATEGORIAS ---
+    // ==========================================
+    // 6. GESTÃO DE CATEGORIAS
+    // ==========================================
     function adicionarCategoriaConfig() {
         const novaCat = document.getElementById('nova-categoria').value.trim();
         if (!novaCat) return alert("Digite um nome.");
@@ -223,7 +534,9 @@
         });
     }
 
-    // --- ATLETAS ---
+    // ==========================================
+    // 7. GESTÃO DE ATLETAS
+    // ==========================================
     function salvarAtleta() {
         const idEditando = document.getElementById('atleta-id-editando').value;
         const nome = document.getElementById('nome').value.trim();
@@ -251,7 +564,7 @@
         const tbody = document.querySelector('#tabela-atletas-cadastrados tbody'); tbody.innerHTML = '';
         atletas.forEach(atleta => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td><b>${atleta.placa}</b></td><td>${atleta.nome}</td><td>${atleta.categoria}</td><td><button class="btn-secondary btn-sm" onclick="prepararEdicaoAtleta('${atleta.id}')">✏️ Edit</button></td>`;
+            tr.innerHTML = `<td><b>${atleta.placa}</b></td><td>${atleta.nome}</td><td>${atleta.categoria}</td><td><button class="btn-secondary btn-sm" onclick="prepararEdicaoAtleta('${atleta.id}')">✏️ Editar</button></td>`;
             tbody.appendChild(tr);
         });
     }
@@ -268,7 +581,9 @@
         document.getElementById('btn-salvar-atleta').innerText = "Salvar Atleta"; document.getElementById('btn-cancelar-edicao').style.display = "none";
     }
 
-    // --- CRONOMETRAGEM ---
+    // ==========================================
+    // 8. PISTA E CRONOMETRAGEM
+    // ==========================================
     function atualizarSelectAtletasParaPista() {
         const select = document.getElementById('select-atleta');
         select.innerHTML = '<option value="">-- Escolha um atleta --</option>';
@@ -330,7 +645,7 @@
             
             resultados.push({ evento: eventoAtivo, idAtleta: atleta.id, placa: atleta.placa, nome: atleta.nome, categoria: atleta.categoria, tempo: formatarTempo(tf), tempoMs: tf });
             
-            salvarDados(); // Salva os resultados
+            salvarDados();
             atletasComCronometroAtivo.delete(atleta.id); 
             atualizarSelectAtletasParaPista(); 
             atualizarTabelaResultados(); 
