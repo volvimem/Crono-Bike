@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "CronoPro - Cronometragem",
-  "short_name": "CronoPro",
-  "description": "Gerenciamento de alta performance para eventos esportivos.",
+  "name": "CronoBike - Cronometragem",
+  "short_name": "CronoBike",
+  "description": "Gerenciamento de alta performance para eventos de ciclismo.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
