@@ -1,22 +1,25 @@
 {
+  "id": "/",
   "name": "Sistema Premium de Cronometragem",
   "short_name": "CronoPro",
   "description": "Gerenciamento de alta performance para eventos esportivos.",
-  "start_url": "./sistema_cronometragem.html",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#f1f5f9",
   "theme_color": "#0f172a",
-  "orientation": "any",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
