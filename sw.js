@@ -1,8 +1,9 @@
-const CACHE_NAME = 'crono-pro-v2';
+const CACHE_NAME = 'crono-pro-v3';
 const ASSETS = [
   './',
-  './sistema_cronometragem.html',
-  './manifest.json'
+  './index.html',
+  './manifest.json',
+  './icone.svg'
 ];
 
 self.addEventListener('install', (e) => {
