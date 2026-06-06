@@ -723,10 +723,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Sua configuração oficial
+    // Sua configuração oficial (AGORA COM A URL DO BANCO DE DADOS)
     const firebaseConfig = {
         apiKey: "AIzaSyBXWHugOmwP9vBVG-dsUffYgFlfJfztKwo",
         authDomain: "cronobike-a941b.firebaseapp.com",
+        databaseURL: "https://cronobike-a941b-default-rtdb.firebaseio.com",
         projectId: "cronobike-a941b",
         storageBucket: "cronobike-a941b.firebasestorage.app",
         messagingSenderId: "882009475258",
@@ -745,6 +746,9 @@
     window.onValue = onValue;
 
     console.log("Firebase conectado com sucesso!");
+    
+    // ATUALIZA A TELA ASSIM QUE O FIREBASE TERMINA DE CARREGAR
+    carregarDados();
 </script>
 </body>
 </html>
