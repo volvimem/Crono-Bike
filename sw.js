@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cronoBike-v3';
+const CACHE_NAME = 'cronoBike-v4';
 const ASSETS = [
   './',
   './index.html',
