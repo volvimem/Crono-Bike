@@ -346,14 +346,24 @@
     let atletasComCronometroAtivo = new Set(); 
 
     // ==========================================
-    // 3. SISTEMA DE SALVAMENTO (LOCALSTORAGE)
+    // 3. SISTEMA DE SALVAMENTO (FIREBASE + LOCALSTORAGE)
     // ==========================================
     function salvarDados() {
         const dados = { eventos, eventoAtivo, categoriasGlobais, atletas, resultados };
+        
+        // 1. Salva localmente como backup (para não perder nada se a internet cair)
         localStorage.setItem('cronoBikeDados', JSON.stringify(dados));
+
+        // 2. Salva na nuvem do Firebase
+        if (window.set && window.ref && window.db) {
+            window.set(window.ref(window.db, 'cronoBikeApp'), dados)
+                .then(() => console.log("Salvo no Firebase com sucesso!"))
+                .catch((error) => console.error("Erro ao salvar no Firebase:", error));
+        }
     }
 
     function carregarDados() {
+        // 1. Carrega o backup local primeiro para a tela abrir bem rápido
         const dadosSalvos = localStorage.getItem('cronoBikeDados');
         if (dadosSalvos) {
             const dados = JSON.parse(dadosSalvos);
@@ -362,6 +372,30 @@
             categoriasGlobais = dados.categoriasGlobais || ["Geral"];
             atletas = dados.atletas || [];
             resultados = dados.resultados || [];
+        }
+
+        // 2. Conecta no Firebase para puxar os dados da nuvem em TEMPO REAL
+        // Qualquer alteração feita em outro celular/PC atualizará a sua tela automaticamente
+        if (window.onValue && window.ref && window.db) {
+            const dadosRef = window.ref(window.db, 'cronoBikeApp');
+            window.onValue(dadosRef, (snapshot) => {
+                const dados = snapshot.val();
+                if (dados) {
+                    eventos = dados.eventos || ["1º Evento Padrão"];
+                    eventoAtivo = dados.eventoAtivo || eventos[0];
+                    categoriasGlobais = dados.categoriasGlobais || ["Geral"];
+                    atletas = dados.atletas || [];
+                    resultados = dados.resultados || [];
+
+                    // Atualiza a interface sempre que receber dados novos da nuvem
+                    atualizarSelectEventos();
+                    atualizarListasDeCategorias();
+                    renderTabelaAtletasCadastrados();
+                    atualizarSelectAtletasParaPista();
+                    atualizarTabelaResultados();
+                    document.getElementById('badge-evento-ativo').innerText = `🏆 Evento: ${eventoAtivo}`;
+                }
+            });
         }
     }
 
