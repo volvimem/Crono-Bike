@@ -1,0 +1,435 @@
+// ==========================================
+// 1. PWA E INSTALAÇÃO
+// ==========================================
+let deferredPrompt;
+const btnInstall = document.getElementById('btn-install-pwa');
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW Registrado!', reg))
+            .catch(err => console.log('Erro SW', err));
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    btnInstall.style.display = 'block'; 
+});
+
+if(btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+        if (deferredPrompt !== null) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            btnInstall.style.display = 'none';
+        }
+    });
+}
+
+window.addEventListener('appinstalled', () => {
+    if(btnInstall) btnInstall.style.display = 'none';
+    deferredPrompt = null;
+});
+
+// ==========================================
+// 2. VARIÁVEIS DE ESTADO DO SISTEMA
+// ==========================================
+let eventos = ["1º Evento Padrão"];
+let eventoAtivo = "1º Evento Padrão";
+let categoriasGlobais = ["Geral"];
+let atletas = [];
+let resultados = []; 
+let cronometrosIdCounter = 0;
+let atletasComCronometroAtivo = new Set(); 
+
+// ==========================================
+// 3. SISTEMA DE SALVAMENTO (FIREBASE + LOCALSTORAGE)
+// ==========================================
+function salvarDados() {
+    const dados = { eventos, eventoAtivo, categoriasGlobais, atletas, resultados };
+    
+    // 1. Salva localmente como backup
+    localStorage.setItem('cronoBikeDados', JSON.stringify(dados));
+
+    // 2. Salva na nuvem do Firebase
+    if (window.set && window.ref && window.db) {
+        window.set(window.ref(window.db, 'cronoBikeApp'), dados)
+            .then(() => console.log("Salvo no Firebase com sucesso!"))
+            .catch((error) => console.error("Erro ao salvar no Firebase:", error));
+    }
+}
+
+function carregarDados() {
+    // 1. Carrega o backup local primeiro
+    const dadosSalvos = localStorage.getItem('cronoBikeDados');
+    if (dadosSalvos) {
+        const dados = JSON.parse(dadosSalvos);
+        eventos = dados.eventos || ["1º Evento Padrão"];
+        eventoAtivo = dados.eventoAtivo || eventos[0];
+        categoriasGlobais = dados.categoriasGlobais || ["Geral"];
+        atletas = dados.atletas || [];
+        resultados = dados.resultados || [];
+    }
+
+    // 2. Conecta no Firebase para puxar os dados da nuvem em TEMPO REAL
+    if (window.onValue && window.ref && window.db) {
+        const dadosRef = window.ref(window.db, 'cronoBikeApp');
+        window.onValue(dadosRef, (snapshot) => {
+            const dados = snapshot.val();
+            if (dados) {
+                eventos = dados.eventos || ["1º Evento Padrão"];
+                eventoAtivo = dados.eventoAtivo || eventos[0];
+                categoriasGlobais = dados.categoriasGlobais || ["Geral"];
+                atletas = dados.atletas || [];
+                resultados = dados.resultados || [];
+
+                atualizarSelectEventos();
+                atualizarListasDeCategorias();
+                renderTabelaAtletasCadastrados();
+                atualizarSelectAtletasParaPista();
+                atualizarTabelaResultados();
+                document.getElementById('badge-evento-ativo').innerText = `🏆 Evento: ${eventoAtivo}`;
+            }
+        });
+    }
+}
+
+// ==========================================
+// 4. INICIALIZAÇÃO DA TELA
+// ==========================================
+window.onload = function() {
+    carregarDados();
+    atualizarSelectEventos();
+    atualizarListasDeCategorias();
+    renderTabelaAtletasCadastrados();
+    mudarEventoAtivo(eventoAtivo);
+    
+    const abaSalva = localStorage.getItem('abaAtiva') || 'aba-cadastro';
+    abrirAba(null, abaSalva);
+};
+
+window.onbeforeunload = function(e) {
+    if (atletasComCronometroAtivo.size > 0) {
+        e.preventDefault();
+        return "Existem cronômetros rodando! Atualizar a página apagará o tempo ativo.";
+    }
+};
+
+function abrirAba(evento, nomeAba) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(nomeAba).classList.add('active');
+    
+    if (evento) {
+        evento.currentTarget.classList.add('active');
+    } else {
+        document.querySelector(`button[onclick*="${nomeAba}"]`).classList.add('active');
+    }
+    
+    localStorage.setItem('abaAtiva', nomeAba); 
+}
+
+function formatarTempo(ms) {
+    let horas = Math.floor(ms / 3600000);
+    let minutos = Math.floor((ms % 3600000) / 60000);
+    let segundos = Math.floor((ms % 60000) / 1000);
+    let milissegundos = Math.floor((ms % 1000) / 10); 
+    return (horas < 10 ? "0" + horas : horas) + ":" + (minutos < 10 ? "0" + minutos : minutos) + ":" + (segundos < 10 ? "0" + segundos : segundos) + "." + (milissegundos < 10 ? "0" + milissegundos : milissegundos);
+}
+
+// ==========================================
+// 5. GESTÃO DE EVENTOS
+// ==========================================
+function criarEvento() {
+    const novoEvento = document.getElementById('novo-evento').value.trim();
+    if(!novoEvento) return alert("Digite um nome.");
+    if(eventos.includes(novoEvento)) return alert("Evento já existe!");
+    eventos.push(novoEvento);
+    document.getElementById('novo-evento').value = '';
+    eventoAtivo = novoEvento;
+    
+    salvarDados();
+    atualizarSelectEventos();
+    mudarEventoAtivo(novoEvento);
+}
+
+function atualizarSelectEventos() {
+    const select = document.getElementById('select-evento-geral');
+    select.innerHTML = '';
+    eventos.forEach(ev => {
+        const opt = document.createElement('option');
+        opt.value = ev; opt.text = ev;
+        if(ev === eventoAtivo) opt.selected = true;
+        select.appendChild(opt);
+    });
+}
+
+function mudarEventoAtivo(evNomeForcado = null) {
+    eventoAtivo = evNomeForcado || document.getElementById('select-evento-geral').value;
+    document.getElementById('badge-evento-ativo').innerText = `🏆 Evento: ${eventoAtivo}`;
+    
+    if(!evNomeForcado && atletasComCronometroAtivo.size === 0) {
+        document.getElementById('cronometros-container').innerHTML = '';
+    }
+    
+    salvarDados();
+    atualizarSelectAtletasParaPista();
+    atualizarTabelaResultados();
+}
+
+function editarEventoAtivo() {
+    if(!eventoAtivo) return;
+    const novoNome = prompt("Novo nome:", eventoAtivo);
+    if(novoNome && novoNome.trim() !== "" && novoNome.trim() !== eventoAtivo) {
+        const nomeFinal = novoNome.trim();
+        if(eventos.includes(nomeFinal)) return alert("Já existe.");
+        const nomeAntigo = eventoAtivo;
+        eventoAtivo = nomeFinal;
+        eventos[eventos.indexOf(nomeAntigo)] = nomeFinal;
+        resultados.forEach(r => { if(r.evento === nomeAntigo) r.evento = nomeFinal; });
+        salvarDados();
+        atualizarSelectEventos();
+        mudarEventoAtivo(nomeFinal);
+    }
+}
+
+function excluirEventoAtivo() {
+    if(!eventoAtivo) return;
+    if(eventos.length === 1) return alert("Crie outro evento antes de apagar o único existente.");
+    if(confirm(`ATENÇÃO!\nApagar evento '${eventoAtivo}' e todos seus tempos?`)) {
+        resultados = resultados.filter(r => r.evento !== eventoAtivo);
+        eventos = eventos.filter(e => e !== eventoAtivo);
+        eventoAtivo = eventos[0];
+        salvarDados();
+        atualizarSelectEventos();
+        mudarEventoAtivo(eventoAtivo);
+    }
+}
+
+// ==========================================
+// 6. GESTÃO DE CATEGORIAS
+// ==========================================
+function adicionarCategoriaConfig() {
+    const novaCat = document.getElementById('nova-categoria').value.trim();
+    if (!novaCat) return alert("Digite um nome.");
+    if (categoriasGlobais.some(c => c.toUpperCase() === novaCat.toUpperCase())) return alert("Já existe!");
+    categoriasGlobais.push(novaCat);
+    document.getElementById('nova-categoria').value = '';
+    salvarDados();
+    atualizarListasDeCategorias();
+}
+
+function excluirCategoria(nome) {
+    if(nome === "Geral") return alert("Não pode excluir 'Geral'.");
+    if(confirm(`Excluir categoria '${nome}'?`)) {
+        categoriasGlobais = categoriasGlobais.filter(c => c !== nome);
+        atletas.forEach(a => { if(a.categoria === nome) a.categoria = "Geral"; });
+        salvarDados();
+        atualizarListasDeCategorias();
+        renderTabelaAtletasCadastrados();
+    }
+}
+
+function editarNomeCategoria(nomeAntigo) {
+    if(nomeAntigo === "Geral") return alert("Geral não pode ser editada.");
+    let novoNome = prompt("Novo nome:", nomeAntigo);
+    if(novoNome && novoNome.trim() !== "") {
+        novoNome = novoNome.trim();
+        if (categoriasGlobais.some(c => c.toUpperCase() === novoNome.toUpperCase() && c !== nomeAntigo)) return alert("Já existe.");
+        categoriasGlobais[categoriasGlobais.indexOf(nomeAntigo)] = novoNome;
+        atletas.forEach(a => { if(a.categoria === nomeAntigo) a.categoria = novoNome; });
+        resultados.forEach(r => { if(r.categoria === nomeAntigo) r.categoria = novoNome; });
+        salvarDados();
+        atualizarListasDeCategorias();
+        renderTabelaAtletasCadastrados();
+        atualizarTabelaResultados();
+    }
+}
+
+function atualizarListasDeCategorias() {
+    const tbody = document.querySelector('#tabela-categorias tbody'); tbody.innerHTML = '';
+    const selectCad = document.getElementById('categoria'); const valCad = selectCad.value; selectCad.innerHTML = '';
+    const selectFiltro = document.getElementById('filtro-categoria-tabela'); const valFiltro = selectFiltro.value; selectFiltro.innerHTML = '<option value="TODAS">-- Todas --</option>';
+
+    categoriasGlobais.sort().forEach(cat => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${cat}</td><td style="text-align: right;">${cat !== 'Geral' ? `<button class="btn-secondary btn-sm" onclick="editarNomeCategoria('${cat}')">✏️</button> <button class="btn-danger btn-sm" onclick="excluirCategoria('${cat}')">🗑️</button>` : 'Padrão'}</td>`;
+        tbody.appendChild(tr);
+
+        const optCad = document.createElement('option'); optCad.value = cat; optCad.text = cat; if(cat === valCad) optCad.selected = true; selectCad.appendChild(optCad);
+        const optFiltro = document.createElement('option'); optFiltro.value = cat; optFiltro.text = cat; if(cat === valFiltro) optFiltro.selected = true; selectFiltro.appendChild(optFiltro);
+    });
+}
+
+// ==========================================
+// 7. GESTÃO DE ATLETAS
+// ==========================================
+function salvarAtleta() {
+    const idEditando = document.getElementById('atleta-id-editando').value;
+    const nome = document.getElementById('nome').value.trim();
+    const placa = document.getElementById('placa').value.trim();
+    const categoria = document.getElementById('categoria').value;
+    const telefone = document.getElementById('telefone').value.trim();
+
+    if (!nome || !placa) return alert("Nome e Placa obrigatórios!");
+
+    if (idEditando) {
+        let atleta = atletas.find(a => a.id === idEditando);
+        if(atleta) { atleta.nome = nome; atleta.placa = placa; atleta.categoria = categoria; atleta.telefone = telefone; }
+        cancelarEdicaoAtleta(); 
+    } else {
+        atletas.push({ id: Date.now().toString(), nome, placa, categoria, telefone });
+        document.getElementById('nome').value = ''; document.getElementById('placa').value = ''; document.getElementById('telefone').value = '';
+    }
+    salvarDados();
+    renderTabelaAtletasCadastrados();
+    atualizarSelectAtletasParaPista();
+    document.getElementById('alert-cadastro').style.display = 'block'; setTimeout(() => document.getElementById('alert-cadastro').style.display = 'none', 3000);
+}
+
+function renderTabelaAtletasCadastrados() {
+    const tbody = document.querySelector('#tabela-atletas-cadastrados tbody'); 
+    tbody.innerHTML = '';
+    
+    atletas.forEach(atleta => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><b>${atleta.placa}</b></td>
+            <td>${atleta.nome}</td>
+            <td>${atleta.categoria}</td>
+            <td style="display: flex; gap: 5px;">
+                <button class="btn-secondary btn-sm" onclick="prepararEdicaoAtleta('${atleta.id}')">✏️ Editar</button>
+                <button class="btn-danger btn-sm" onclick="excluirAtleta('${atleta.id}')">🗑️ Excluir</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function prepararEdicaoAtleta(id) {
+    const atleta = atletas.find(a => a.id === id); if(!atleta) return;
+    document.getElementById('atleta-id-editando').value = atleta.id; document.getElementById('nome').value = atleta.nome; document.getElementById('placa').value = atleta.placa; document.getElementById('categoria').value = atleta.categoria; document.getElementById('telefone').value = atleta.telefone;
+    document.getElementById('btn-salvar-atleta').innerText = "Salvar"; document.getElementById('btn-cancelar-edicao').style.display = "block";
+    window.scrollTo(0, 0);
+}
+
+function cancelarEdicaoAtleta() {
+    document.getElementById('atleta-id-editando').value = ''; document.getElementById('nome').value = ''; document.getElementById('placa').value = ''; document.getElementById('telefone').value = '';
+    document.getElementById('btn-salvar-atleta').innerText = "Salvar Atleta"; document.getElementById('btn-cancelar-edicao').style.display = "none";
+}
+
+function excluirAtleta(id) {
+    if (confirm("Tem certeza que deseja excluir este atleta? Todos os tempos associados a ele também serão apagados.")) {
+        atletas = atletas.filter(a => a.id !== id);
+        resultados = resultados.filter(r => r.idAtleta !== id);
+        salvarDados();
+        renderTabelaAtletasCadastrados();
+        atualizarSelectAtletasParaPista();
+        atualizarTabelaResultados();
+    }
+}
+
+// ==========================================
+// 8. PISTA E CRONOMETRAGEM
+// ==========================================
+function atualizarSelectAtletasParaPista() {
+    const select = document.getElementById('select-atleta');
+    select.innerHTML = '<option value="">-- Escolha um atleta --</option>';
+    let tem = false;
+    atletas.forEach(a => {
+        if (!resultados.some(r => r.idAtleta === a.id && r.evento === eventoAtivo) && !atletasComCronometroAtivo.has(a.id)) {
+            const opt = document.createElement('option'); opt.value = a.id; opt.text = `[${a.placa}] ${a.nome}`; select.appendChild(opt); tem = true;
+        }
+    });
+    if (!tem) select.innerHTML = '<option value="">-- Nenhum disponível --</option>';
+}
+
+function adicionarCronometro() {
+    const atletaId = document.getElementById('select-atleta').value;
+    if (!atletaId) return alert("Selecione um atleta.");
+    const atleta = atletas.find(a => a.id === atletaId);
+    cronometrosIdCounter++; const timerId = cronometrosIdCounter;
+    atletasComCronometroAtivo.add(atletaId);
+    atualizarSelectAtletasParaPista();
+
+    const timerData = { id: timerId, atleta: atleta, startTime: 0, elapsedTime: 0, interval: null, correndo: false };
+    const card = document.createElement('div'); card.className = 'cronometro-card'; card.id = `timer-card-${timerId}`;
+    card.innerHTML = `
+        <h3>${atleta.nome}</h3><div class="atleta-info">Placa: <b>${atleta.placa}</b> | Cat: ${atleta.categoria}</div>
+        <div class="tempo-display" id="display-${timerId}">00:00:00.00</div>
+        <div class="controles-grid">
+            <button class="btn-success" id="btn-start-${timerId}">▶ Iniciar</button>
+            <button class="btn-warning" id="btn-stop-${timerId}">⏸ Pausar</button>
+            <button class="btn-secondary" id="btn-reset-${timerId}">🔄 Zerar</button>
+            <button class="btn-danger" id="btn-cancel-${timerId}">✖ Cancelar</button>
+        </div>
+        <button class="btn-primary btn-full" id="btn-save-${timerId}" style="margin-top: 10px;">🏁 Finalizar Tempo</button>
+    `;
+    document.getElementById('cronometros-container').insertBefore(card, document.getElementById('cronometros-container').firstChild);
+    const display = document.getElementById(`display-${timerId}`);
+
+    function update() { display.innerText = formatarTempo(timerData.elapsedTime + (Date.now() - timerData.startTime)); }
+    
+    document.getElementById(`btn-start-${timerId}`).onclick = () => { 
+        if (!timerData.correndo) { timerData.startTime = Date.now(); timerData.interval = setInterval(update, 10); timerData.correndo = true; } 
+    };
+    
+    document.getElementById(`btn-stop-${timerId}`).onclick = () => { 
+        if (timerData.correndo) { clearInterval(timerData.interval); timerData.elapsedTime += Date.now() - timerData.startTime; timerData.correndo = false; } 
+    };
+    
+    document.getElementById(`btn-reset-${timerId}`).onclick = () => { 
+        clearInterval(timerData.interval); timerData.correndo = false; timerData.elapsedTime = 0; display.innerText = "00:00:00.00"; 
+    };
+    
+    document.getElementById(`btn-cancel-${timerId}`).onclick = () => { 
+        clearInterval(timerData.interval); atletasComCronometroAtivo.delete(atleta.id); atualizarSelectAtletasParaPista(); card.remove(); 
+    };
+    
+    document.getElementById(`btn-save-${timerId}`).onclick = () => {
+        clearInterval(timerData.interval);
+        let tf = timerData.elapsedTime; if (timerData.correndo) tf += Date.now() - timerData.startTime;
+        if (tf === 0) return alert("Cronômetro zerado!");
+        
+        resultados.push({ evento: eventoAtivo, idAtleta: atleta.id, placa: atleta.placa, nome: atleta.nome, categoria: atleta.categoria, tempo: formatarTempo(tf), tempoMs: tf });
+        
+        salvarDados();
+        atletasComCronometroAtivo.delete(atleta.id); 
+        atualizarSelectAtletasParaPista(); 
+        atualizarTabelaResultados(); 
+        card.remove();
+    };
+}
+
+function refazerVolta(idA, ev) {
+    if (!confirm("Apagar tempo e refazer volta?")) return;
+    resultados = resultados.filter(r => !(r.idAtleta === idA && r.evento === ev));
+    salvarDados();
+    atualizarSelectAtletasParaPista(); 
+    atualizarTabelaResultados();
+}
+
+function atualizarTabelaResultados() {
+    const tbody = document.querySelector('#tabela-resultados tbody'); tbody.innerHTML = '';
+    const filtro = document.getElementById('filtro-categoria-tabela').value;
+    let resEv = resultados.filter(r => r.evento === eventoAtivo).sort((a, b) => a.tempoMs - b.tempoMs);
+    let pos = 1;
+    resEv.forEach(r => {
+        if (filtro === 'TODAS' || r.categoria === filtro) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="pos-col">${pos}º</td><td><b>${r.placa}</b></td><td>${r.nome}</td><td>${r.categoria}</td><td><b>${r.tempo}</b></td><td class="no-print"><button class="btn-warning btn-sm" onclick="refazerVolta('${r.idAtleta}', '${r.evento}')">🔄</button></td>`;
+            tbody.appendChild(tr); pos++;
+        }
+    });
+}
+
+function gerarPDF() {
+    if (resultados.filter(r => r.evento === eventoAtivo).length === 0) return alert("Sem resultados neste evento.");
+    document.getElementById('print-evento-titulo').innerText = eventoAtivo;
+    const fil = document.getElementById('filtro-categoria-tabela').value;
+    document.getElementById('print-categoria-titulo').innerText = "Categoria: " + (fil === 'TODAS' ? "Geral" : fil);
+    const d = new Date(); document.getElementById('print-date').innerText = "Emitido em: " + d.toLocaleDateString('pt-BR') + " às " + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+    window.print();
+}
